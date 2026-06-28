@@ -1,0 +1,95 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String     @id @default(cuid())
+  email     String     @unique
+  name      String
+  password  String
+  avatar    String?
+  bio       String?
+  rating    Float      @default(0)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  
+  tasks     Task[]
+  offers    TaskOffer[]
+  reviews   Review[]
+  notifications Notification[]
+}
+
+model Task {
+  id          String     @id @default(cuid())
+  title       String
+  description String
+  category    String
+  budget      Float
+  status      String     @default("open") // open, assigned, completed
+  deadline    DateTime
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+  
+  creatorId   String
+  creator     User       @relation(fields: [creatorId], references: [id], onDelete: Cascade)
+  offers      TaskOffer[]
+  reviews     Review[]
+  
+  @@index([creatorId])
+  @@index([status])
+}
+
+model TaskOffer {
+  id        String     @id @default(cuid())
+  amount    Float
+  message   String
+  status    String     @default("pending") // pending, accepted, rejected
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  
+  taskId    String
+  task      Task       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  workerId  String
+  worker    User       @relation(fields: [workerId], references: [id], onDelete: Cascade)
+  
+  @@index([taskId])
+  @@index([workerId])
+}
+
+model Review {
+  id        String     @id @default(cuid())
+  rating    Int
+  comment   String
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  
+  taskId    String
+  task      Task       @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  reviewerId String
+  reviewer  User       @relation(fields: [reviewerId], references: [id], onDelete: Cascade)
+  
+  @@index([taskId])
+  @@index([reviewerId])
+}
+
+model Notification {
+  id        String     @id @default(cuid())
+  type      String     // task_offer, task_accepted, review_received
+  message   String
+  read      Boolean    @default(false)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  
+  userId    String
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@index([userId])
+}
